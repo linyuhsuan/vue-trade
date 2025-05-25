@@ -1,0 +1,73 @@
+@import './variables.scss';
+
+
+.order-book {
+  background-color: $bg-color;
+  color: $default-text;
+  width: 100%;
+  // max-width: 320px;
+  border-radius: 4px;
+  .order-book-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid gray;
+  }
+}
+
+.order-book-columns {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-bottom: 1px solid gray;
+  .column-header {
+    font-size: 12px;
+    color: $quote-head-text;
+  }
+}
+
+// .order-row {
+//     display: flex;
+//     justify-content: space-between;
+//     align-items: center;
+//     padding: 4px 16px;
+//     height: 32px;
+//   }
+
+
+  .last-price {
+    font-size: 20px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    &.up {
+      color: $buy-quote-text;
+      background: $quote-total-size-bar;
+    }
+    &.down {
+      color: $sell-quote-text;
+      background: $sell-quote-total-size-bar;
+    }
+    &.same {
+      color: $default-text;
+    }
+    .arrow {
+      &.up {
+        transform: rotate(180deg);
+        fill: $buy-quote-text;
+      }
+      &.down {
+        transform: rotate(0deg);
+        fill: $sell-quote-text;
+      }
+      &.same {
+        display: none;
+      }
+    }
+  }
