@@ -63,8 +63,10 @@ const highlights = ref([]);
 watch(
   () => props.orderBookData,
   (newVal, oldVal) => {
+    if (!newVal) return;
+    
     newVal.forEach((item, idx) => {
-      const oldItem = oldVal.find((o) => o.price === item.price);
+      const oldItem = oldVal?.find((o) => o.price === item.price);
       if (!oldItem) {
         highlights.value[idx] = OrderBookHighlight.NEW;
       } else if (item.size > oldItem.size) {

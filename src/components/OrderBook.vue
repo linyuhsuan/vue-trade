@@ -40,6 +40,8 @@ const priceData = reactive({
  * @param {Array} list - 原始 orderbook 資料，每筆為 [price, size]
  * @param {number} [count=8] - 取幾筆
  * @param {boolean} [reverse=false] - 是否反轉順序
+ * - asks price 從低到高排序，bids price 從高到低排序
+ * - 計算累積總量 ask 從高到低，bids 從低到高
  * @returns {Array} - 含 price, size, total, percentage 的物件陣列
  */
 const calcTopList = (list, count, reverse) => {
@@ -129,14 +131,14 @@ const processLastPriceData = (data) => {
 const wsOrderBook = useWebSocket({
   topic: 'update:BTCPFC',
   endPoint: 'oss/futures',
-  onData: processOrderBookData,
+  callback: processOrderBookData,
 });
 
 // websocket: Last price API
 const wsLastPrice = useWebSocket({
   topic: 'tradeHistoryApi:BTCPFC',
   endPoint: 'futures',
-  onData: processLastPriceData,
+  callback: processLastPriceData,
 });
 
 onMounted(() => {

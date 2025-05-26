@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 
-export function useWebSocket({ topic, endPoint, onData }) {
+export function useWebSocket({ topic, endPoint, callback }) {
   const ws = ref(null);
 
   const connectWebSocket = () => {
@@ -13,7 +13,7 @@ export function useWebSocket({ topic, endPoint, onData }) {
 
     ws.value.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      if (onData) onData(data.data);
+      if (callback) callback(data.data);
     };
 
     ws.value.onerror = (error) => {

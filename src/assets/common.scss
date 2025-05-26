@@ -50,10 +50,10 @@
     box-sizing: border-box;
   }
 
-  &.price-asks {
+  .price-asks {
     color: $sell-quote-text;
   }
-  &.price-bids {
+  .price-bids {
     color: $buy-quote-text;
   }
 
