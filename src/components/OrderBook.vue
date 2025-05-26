@@ -9,21 +9,20 @@
       <span class="column-header">Total</span>
     </div>
     <!-- 賣單 (asks) -->
-    ask
     <OrderBookList :orderBookData="topAsks" :isAsks="true" />
-    <!-- 最新價格區域 -->
+    <!-- Last Price -->
     <LastPrice :priceData="priceData" />
     <!-- 買單 (bids) -->
-    bids
     <OrderBookList :orderBookData="topBids" :isAsks="false" />
   </div>
 </template>
 
 <script setup>
 import { reactive, computed, onMounted, onBeforeUnmount } from 'vue';
-import { useWebSocket } from '@/lib/composables/useWebSocket';
 import LastPrice from '@/components/LastPrice.vue';
 import OrderBookList from '@/components/OrderBookList.vue';
+import { OrderBookType } from '@/lib/enum/common';
+import { useWebSocket } from '@/lib/composables/useWebSocket';
 
 const orderBook = reactive({
   bids: [], // 買方訂單
@@ -36,31 +35,42 @@ const priceData = reactive({
   prevPrice: null, // 上一筆價格
 });
 
-function calcTopList(list, count = 8, reverse = false) {
-  const arr = list.slice(0, count);
-  let total = 0;
-  const base = reverse ? [...arr].reverse() : arr;
-  const withTotal = base.map((item) => {
-    total += parseFloat(item[1]);
-    return {
-      price: item[0],
-      size: parseFloat(item[1]),
-      total: total,
-    };
+/**
+ * 取前 count 筆 orderbook，計算累積總量與百分比
+ * @param {Array} list - 原始 orderbook 資料，每筆為 [price, size]
+ * @param {number} [count=8] - 取幾筆
+ * @param {boolean} [reverse=false] - 是否反轉順序
+ * @returns {Array} - 含 price, size, total, percentage 的物件陣列
+ */
+const calcTopList = (list, count, reverse) => {
+  const topList = list.slice(0, count);
+  const orderedList = reverse ? [...topList].reverse() : topList;
+  let cumulative = 0;
+  // 計算累積總量
+  const cumulativeList = orderedList.map(([price, size]) => {
+    cumulative += parseFloat(size);
+    return { price, size: parseFloat(size), total: cumulative };
   });
-  const maxTotal = withTotal[withTotal.length - 1]?.total || 1;
-  const result = withTotal.map((item) => ({
+  const maxCumulative = cumulativeList[cumulativeList.length - 1]?.total || 1;
+  // 計算百分比
+  const finalList = cumulativeList.map((item) => ({
     ...item,
-    percentage: ((item.total / maxTotal) * 100).toFixed(2),
+    percentage: (item.total / maxCumulative) * 100,
   }));
-  return reverse ? result.reverse() : result;
-}
+  return reverse ? finalList.reverse() : finalList;
+};
 
 const topAsks = computed(() => calcTopList(orderBook.asks, 8, true));
 const topBids = computed(() => calcTopList(orderBook.bids, 8, false));
 
-// 更新 orderbook list
-const updateOrderList = (updates, isAsk = true) => {
+/**
+ * 根據更新資料，更新 orderBook 的 asks 或 bids
+ * @param {Array} updates - 更新資料陣列，每筆為 [price, size]
+ * @param {boolean} isAsk - true 表示更新 asks，false 表示更新 bids
+ * - 當 size > 0 時，若 price 已存在，則更新 size，否則新增一筆資料
+ * - 當 size = 0 時，若 price 存在，則刪除該筆資料
+ */
+const updateOrderBook = (updates, isAsk) => {
   const list = isAsk ? orderBook.asks : orderBook.bids;
   updates.forEach(([priceStr, sizeStr]) => {
     const price = parseFloat(priceStr);
@@ -77,14 +87,18 @@ const updateOrderList = (updates, isAsk = true) => {
     }
   });
   // 以price 做排序
-  list.sort((a, b) =>
-    isAsk ? a[0] - b[0] : b[0] - a[0],
-  );
+  list.sort((a, b) => (isAsk ? a[0] - b[0] : b[0] - a[0]));
 };
 
-// 處理 orderbook Data
+/**
+ * 處理 OrderBook 的 WebSocket 資料，根據 type 決定快照或增量更新
+ * @param {Object} data - WebSocket 傳來的 OrderBook 資料
+ * - 第一筆資料會收到 order book 快照(type 為 snapshot)，後續為增量更新(type 為 delta) 並更新資料
+ * - 如果新資料的 prevSeqNum 不等於上一筆的 seqNum，必須重新訂閱取得 snapshot
+ */
 const processOrderBookData = (data) => {
-  if (data.type === 'snapshot') {
+  if (!data) return;
+  if (data.type === OrderBookType.SNAPSHOT) {
     orderBook.asks = data.asks.map((item) => [parseFloat(item[0]), parseFloat(item[1])]);
     orderBook.bids = data.bids.map((item) => [parseFloat(item[0]), parseFloat(item[1])]);
   } else {
@@ -92,13 +106,17 @@ const processOrderBookData = (data) => {
       wsOrderBook.resubscribe();
     }
     orderBook.lastSeqNum = data.seqNum;
-    if (data.type === 'delta') {
-      updateOrderList(data.asks, true);
-      updateOrderList(data.bids, false);
+    if (data.type === OrderBookType.DELTA) {
+      updateOrderBook(data.asks, true);
+      updateOrderBook(data.bids, false);
     }
   }
 };
 
+/**
+ * 處理最新成交價資料，更新 priceData 物件。
+ * @param {Array} data - 最新成交價資料陣列
+ */
 const processLastPriceData = (data) => {
   if (Array.isArray(data) && data.length > 0) {
     const newPrice = data[0].price;
@@ -107,14 +125,14 @@ const processLastPriceData = (data) => {
   }
 };
 
-// websocket: OrderBook
+// websocket: OrderBook API
 const wsOrderBook = useWebSocket({
   topic: 'update:BTCPFC',
   endPoint: 'oss/futures',
   onData: processOrderBookData,
 });
 
-// websocket: Last price
+// websocket: Last price API
 const wsLastPrice = useWebSocket({
   topic: 'tradeHistoryApi:BTCPFC',
   endPoint: 'futures',

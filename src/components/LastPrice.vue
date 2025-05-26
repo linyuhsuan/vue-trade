@@ -1,15 +1,23 @@
 <template>
-  <div class="last-price"  :class="{
-      'up': props.priceData.price > props.priceData.prevPrice,
-      'down': props.priceData.price < props.priceData.prevPrice,
-      'same': props.priceData.price === props.priceData.prevPrice
-    }">
-    <span>{{ props.priceData.price }}</span>
-    <img :class="{
-      'up': props.priceData.price > props.priceData.prevPrice,
-      'down': props.priceData.price < props.priceData.prevPrice,
-      'same': props.priceData.price === props.priceData.prevPrice
-    }" class="arrow" src="@/assets/arrowDown.svg" alt="arrow">
+  <div
+    class="last-price"
+    :class="{
+      up: props.priceData.price > props.priceData.prevPrice,
+      down: props.priceData.price < props.priceData.prevPrice,
+      same: props.priceData.price === props.priceData.prevPrice,
+    }"
+  >
+    <span>{{ formatNumber(props.priceData.price) }}</span>
+    <img
+      :class="{
+        up: props.priceData.price > props.priceData.prevPrice,
+        down: props.priceData.price < props.priceData.prevPrice,
+        same: props.priceData.price === props.priceData.prevPrice,
+      }"
+      class="arrow"
+      src="@/assets/arrowDown.svg"
+      alt="arrow"
+    />
   </div>
 </template>
 
@@ -22,5 +30,4 @@ const props = defineProps({
     required: true,
   },
 });
-
 </script>

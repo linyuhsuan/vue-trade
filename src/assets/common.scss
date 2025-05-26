@@ -1,5 +1,4 @@
-@import './variables.scss';
-
+@use './variables.scss' as *;
 
 .order-book {
   background-color: $bg-color;
@@ -28,46 +27,128 @@
   }
 }
 
-// .order-row {
-//     display: flex;
-//     justify-content: space-between;
-//     align-items: center;
-//     padding: 4px 16px;
-//     height: 32px;
-//   }
+// ========== OrderBookList ========== //
+.order-container {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  &:hover {
+    background-color: $quote-row-hover-bg;
+    cursor: pointer;
+  }
 
+  &.flash-asks {
+    animation: flash-asks 0.8s;
+  }
+  &.flash-bids {
+    animation: flash-bids 0.8s;
+  }
 
-  .last-price {
-    font-size: 20px;
-    padding: 8px 16px;
-    border-radius: 8px;
-    margin-bottom: 16px;
+  > div {
+    flex: 1;
+    padding: 0 8px;
+    box-sizing: border-box;
+  }
+
+  &.price-asks {
+    color: $sell-quote-text;
+  }
+  &.price-bids {
+    color: $buy-quote-text;
+  }
+
+  .highlight {
+    text-align: right;
+    justify-content: center;
     display: flex;
     align-items: center;
-    justify-content: center;
-  
-    &.up {
-      color: $buy-quote-text;
-      background: $quote-total-size-bar;
+    // animation: highlight-fade 1s;
+    .up {
+      background: $animation-flash-green-bg;
     }
-    &.down {
-      color: $sell-quote-text;
-      background: $sell-quote-total-size-bar;
-    }
-    &.same {
-      color: $default-text;
-    }
-    .arrow {
-      &.up {
-        transform: rotate(180deg);
-        fill: $buy-quote-text;
-      }
-      &.down {
-        transform: rotate(0deg);
-        fill: $sell-quote-text;
-      }
-      &.same {
-        display: none;
-      }
+    .down {
+      background: $animation-flash-red-bg;
     }
   }
+
+  .total-content {
+    position: relative;
+    overflow: hidden;
+    text-align: right;
+    flex: 1;
+
+    .progress-bar {
+      position: absolute;
+      top: 0;
+      right: 0;
+      left: auto;
+      height: 100%;
+      z-index: 1;
+      border-radius: 2px;
+      transition: width 0.3s;
+    }
+  }
+}
+
+// 動畫
+@keyframes highlight-fade {
+  from {
+    filter: brightness(1.5);
+  }
+  to {
+    filter: brightness(1);
+  }
+}
+@keyframes flash-asks {
+  from {
+    background: $animation-flash-red-bg;
+  }
+  to {
+    background: transparent;
+  }
+}
+@keyframes flash-bids {
+  from {
+    background: $animation-flash-green-bg;
+  }
+  to {
+    background: transparent;
+  }
+}
+
+// ========== LastPrice ========== //
+.last-price {
+  font-size: 20px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.up {
+    color: $buy-quote-text;
+    background: $quote-total-size-bar;
+  }
+  &.down {
+    color: $sell-quote-text;
+    background: $sell-quote-total-size-bar;
+  }
+  &.same {
+    color: $default-text;
+    background: $price-bg;
+  }
+  .arrow {
+    &.up {
+      transform: rotate(180deg);
+      fill: $buy-quote-text;
+    }
+    &.down {
+      transform: rotate(0deg);
+      fill: $sell-quote-text;
+    }
+    &.same {
+      display: none;
+    }
+  }
+}

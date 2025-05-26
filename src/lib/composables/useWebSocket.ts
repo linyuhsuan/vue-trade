@@ -1,4 +1,4 @@
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref } from 'vue';
 
 export function useWebSocket({ topic, endPoint, onData }) {
   const ws = ref(null);
@@ -31,9 +31,6 @@ export function useWebSocket({ topic, endPoint, onData }) {
       ws.value.send(JSON.stringify({ op: 'subscribe', args: [topic] }));
     }
   };
-
-  //   onMounted(connectWebSocket);
-  //   onBeforeUnmount(() => ws.value && ws.value.close());
 
   return { ws, connectWebSocket, resubscribe };
 }

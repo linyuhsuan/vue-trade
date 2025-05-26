@@ -1,38 +1,42 @@
 <template>
-<div v-for="(item, index) in orderBookData" :key="item.price" class="order-row">
-  <div :class="props.isAsks ? 'price-ask' : 'price-bid'">{{ formatNumber(item.price) }}</div>
   <div
-    class="size-cell  highlight"
-    
+    v-for="(item, index) in orderBookData"
+    :key="item.price"
+    class="order-container"
+    :class="{
+      'flash-asks': highlights[index] === OrderBookHighlight.NEW && props.isAsks,
+      'flash-bids': highlights[index] === OrderBookHighlight.NEW && !props.isAsks,
+    }"
+    @animationend="removeHighlight(index)"
   >
-    <span :class="{
-      'highlight--up': highlights[index] === 'up',
-      'highlight--down': highlights[index] === 'down',
-    }"
-    @animationend="removeHighlight(index)">{{ formatNumber(item.size) }}</span>
+    <div :class="props.isAsks ? 'price-asks' : 'price-bids'">{{ formatNumber(item.price) }}</div>
+    <div class="highlight">
+      <span
+        :class="{
+          up: highlights[index] === OrderBookHighlight.UP,
+          down: highlights[index] === OrderBookHighlight.DOWN,
+        }"
+        @animationend="removeHighlight(index)"
+        >{{ formatNumber(item.size) }}</span
+      >
+    </div>
+    <div class="total-content">
+      <div
+        class="progress-bar"
+        :style="{
+          width: `${item.percentage}%`,
+          background: props.isAsks ? 'rgba(255, 90, 90, 0.12)' : 'rgba(16, 186, 104, 0.12)',
+        }"
+      ></div>
+      <span>{{ formatNumber(item.total) }}</span>
+    </div>
   </div>
-  <div class="total-cell">
-  <div
-    class="progress-bar"
-    :style="{
-      width: item.percentage + '%',
-      background: props.isAsks
-        ? 'rgba(255, 90, 90, 0.12)'
-        : 'rgba(16, 186, 104, 0.12)',
-      right: 0, // 讓進度條從右往左展開
-      left: 'auto'
-    }"
-  ></div>
-  <span class="total-content">
-    {{ formatNumber(item.total) }}
-  </span>
-</div>
-</div>
 </template>
 
 <script setup>
 import { ref, watch } from 'vue';
 import { formatNumber } from '@/lib/utils/stringUtils';
+import { OrderBookHighlight } from '@/lib/enum/common';
 
 const props = defineProps({
   orderBookData: {
@@ -44,103 +48,45 @@ const props = defineProps({
     required: true,
   },
 });
+const highlights = ref([]);
 
-const highlights = ref([]); // 'up' | 'down' | null
-
+/**
+ * 監聽 orderBookData 的變化，根據price與size變化設定 highlights 狀態
+ * @param {Array} newVal - 最新的 orderBookData 陣列
+ * @param {Array} oldVal - 前一次的 orderBookData 陣列
+ * - 若 price 為新出現，設為 new
+ * - 若同一 price 的 size 增加，設為 up
+ * - 若同一 price 的 size 減少，設為 down
+ * - 若同一 price 的 size 沒變，設為 null
+ * - 若 highlights 長度大於新資料，去除多餘的 highlight 狀態
+ */
 watch(
   () => props.orderBookData,
   (newVal, oldVal) => {
-    console.log('watch', newVal, oldVal);
     newVal.forEach((item, idx) => {
-      const prev = oldVal?.[idx]?.size;
-      if (item.size > prev) {
-        highlights.value[idx] = 'up';
-      } else if (item.size < prev) {
-        highlights.value[idx] = 'down';
+      const oldItem = oldVal.find((o) => o.price === item.price);
+      if (!oldItem) {
+        highlights.value[idx] = OrderBookHighlight.NEW;
+      } else if (item.size > oldItem.size) {
+        highlights.value[idx] = OrderBookHighlight.UP;
+      } else if (item.size < oldItem.size) {
+        highlights.value[idx] = OrderBookHighlight.DOWN;
       } else {
         highlights.value[idx] = null;
       }
     });
-    highlights.value.length = newVal.length;
+    // 清理不存在的項目
+    // if (highlights.value.length > newVal.length) {
+    //   highlights.value = highlights.value.slice(0, newVal.length);
+    // }
   },
   { immediate: true },
 );
 
-function getSizeClass(item, idx) {
-  return highlights.value[idx] ? `highlight highlight--${highlights.value[idx]}` : '';
-}
-
-function removeHighlight(idx) {
-  highlights.value[idx] = null;
-}
+// 移除 highlight 狀態
+const removeHighlight = (idx) => {
+  if (highlights.value[idx]) {
+    highlights.value[idx] = null;
+  }
+};
 </script>
-
-<style scoped>
-.highlight {
-  animation: highlight-fade 1s;
-}
-.highlight--up {
-  background: rgba(0, 255, 0, 0.2);
-}
-.highlight--down {
-  background: rgba(255, 0, 0, 0.2);
-}
-@keyframes highlight-fade {
-  from {
-    filter: brightness(1.5);
-  }
-  to {
-    filter: brightness(1);
-  }
-}
-.order-row > .size-cell {
-  text-align: right;
-  justify-content: center;
-  display: flex;
-  align-items: center;
-}
-.price-ask {
-  color: #ff5b5a;
-}
-.price-bid {
-  color: #00b15d;
-}
-
-.order-row {
-  display: flex;
-  align-items: center;
-  min-height: 32px;
-}
-
-.order-row > div {
-  flex: 1;
-  padding: 0 8px;
-  box-sizing: border-box;
-}
-
-.total-cell {
-  position: relative;
-  overflow: hidden;
-  text-align: right;
-  flex: 1;
-}
-
-.progress-bar {
-  position: absolute;
-  top: 0;
-  right: 0;      /* 讓進度條從右邊開始 */
-  height: 100%;
-  z-index: 0;
-  border-radius: 2px;
-  transition: width 0.3s;
-  pointer-events: none;
-}
-
-.total-content {
-  position: relative;
-  z-index: 1;
-  padding-right: 8px;
-  display: inline-block;
-  text-align: right;
-}
-</style>
