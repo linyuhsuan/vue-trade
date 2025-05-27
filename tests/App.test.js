@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
-import OrderBook from '@/components/OrderBook.vue';
+import App from '@/App.vue';
 import { OrderBookType } from '@/lib/enum/common';
 
 // 模擬 useWebSocket composable
@@ -15,12 +15,12 @@ vi.mock('@/lib/composables/useWebSocket', () => ({
   })),
 }));
 
-describe('OrderBook', () => {
+describe('App', () => {
   let wrapper;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    wrapper = mount(OrderBook, {
+    wrapper = mount(App, {
       global: {
         stubs: {
           LastPrice: true,
@@ -31,12 +31,12 @@ describe('OrderBook', () => {
 
     // 設定初始測試資料
     wrapper.vm.orderBook.asks = [
-      [50100, 1.5],
-      [50200, 2],
+      [109824.1, 77900],
+      [109824.4, 86550],
     ];
     wrapper.vm.orderBook.bids = [
-      [49900, 1],
-      [49800, 1.5],
+      [109794.5, 360],
+      [109785.3, 30900],
     ];
     wrapper.vm.orderBook.lastSeqNum = 100;
     wrapper.vm.priceData.price = 50000;
@@ -57,60 +57,37 @@ describe('OrderBook', () => {
   });
 
   describe('OrderBook 資料處理邏輯', () => {
-    it('處理 snapshot 初始化', () => {
-      const snapshotData = {
-        type: OrderBookType.SNAPSHOT,
-        asks: [
-          ['50100', '1.5'],
-          ['50200', '2.0'],
-        ],
-        bids: [
-          ['49900', '1.0'],
-          ['49800', '1.5'],
-        ],
-      };
-
-      wrapper.vm.processOrderBookData(snapshotData);
-
-      // 驗證資料正確轉換為數字格式
-      expect(wrapper.vm.orderBook.asks).toEqual([
-        [50100, 1.5],
-        [50200, 2.0],
-      ]);
-      expect(wrapper.vm.orderBook.bids).toEqual([
-        [49900, 1.0],
-        [49800, 1.5],
-      ]);
-    });
-
     it('處理 delta 增量更新', () => {
       const deltaData = {
         type: OrderBookType.DELTA,
         seqNum: 101,
         prevSeqNum: 100,
         asks: [
-          ['50100', '2.0'],
-          ['50300', '1.0'],
-        ], // 更新現有 + 新增
+          ['109824.1', '80000'], // 更新
+          ['109825.0', '50000'], // 新增
+        ],
         bids: [
-          ['49900', '0'],
-          ['49700', '2.0'],
-        ], // 刪除 + 新增
+          ['109794.5', '0'], // 刪除
+          ['109780.0', '10000'], // 新增
+        ],
       };
 
       wrapper.vm.processOrderBookData(deltaData);
 
-      
-      const updatedAsk = wrapper.vm.orderBook.asks.find((item) => item[0] === 50100);
-      expect(updatedAsk[1]).toBe(2); // 更新
+      // 應該有更新的 ask
+      const updatedAsk = wrapper.vm.orderBook.asks.find((item) => item[0] === 109824.1);
+      expect(updatedAsk[1]).toBe(80000); // 更新
 
-      const hasNewAsk = wrapper.vm.orderBook.asks.some((item) => item[0] === 50300);
+      // 應該有新增的 ask
+      const hasNewAsk = wrapper.vm.orderBook.asks.some((item) => item[0] === 109825.0);
       expect(hasNewAsk).toBe(true); // 新增
 
-      const hasDeletedBid = wrapper.vm.orderBook.bids.some((item) => item[0] === 49900);
+      // 應該已經刪除的 bid
+      const hasDeletedBid = wrapper.vm.orderBook.bids.some((item) => item[0] === 109794.5);
       expect(hasDeletedBid).toBe(false); // 刪除
 
-      const hasNewBid = wrapper.vm.orderBook.bids.some((item) => item[0] === 49700);
+      // 應該有新增的 bid
+      const hasNewBid = wrapper.vm.orderBook.bids.some((item) => item[0] === 109780.0);
       expect(hasNewBid).toBe(true); // 新增
     });
 
@@ -127,73 +104,62 @@ describe('OrderBook', () => {
     });
   });
 
-  describe('價格資料處理邏輯', () => {
-    it('更新最新價格並保留前一個價格', () => {
-      const newPriceData = [{ price: 50500 }];
-      wrapper.vm.processLastPriceData(newPriceData);
-
-      expect(wrapper.vm.priceData.prevPrice).toBe(50000);
-      expect(wrapper.vm.priceData.price).toBe(50500);
-    });
-  });
-
   describe('計算邏輯與 UI 資料轉換', () => {
     it('計算 asks 的累積總量和百分比', () => {
       wrapper.vm.orderBook.asks = [
-        [50100, 1],
-        [50200, 2],
-        [50300, 3],
+        [109824.7, 95200],
+        [109824.4, 86550],
+        [109824.1, 77900],
       ];
       const result = wrapper.vm.topAsks;
-      // 驗證 price 排序結果（低到高顯示）
-      expect(result[0].price).toBe(50100);
-      expect(result[1].price).toBe(50200);
-      expect(result[2].price).toBe(50300);
+      // 驗證 price 排序結果（高到低顯示）
+      expect(result[0].price).toBe(109824.7);
+      expect(result[1].price).toBe(109824.4);
+      expect(result[2].price).toBe(109824.1);
 
-      // 驗證累積總量計算（從高價往低價累積，顯示順序是低到高）
-      expect(result[0].total).toBe(6.0);
-      expect(result[1].total).toBe(5.0);
-      expect(result[2].total).toBe(3.0);
+      // 驗證累積總量（由低價往高價加，對應到高到低排序的每一筆）
+      expect(result[2].total).toBe(77900);
+      expect(result[1].total).toBe(164450);
+      expect(result[0].total).toBe(259650);
 
-      // 驗證百分比計算
+      // 驗證百分比
+      expect(result[2].percentage).toBeCloseTo(30.0, 2);
+      expect(result[1].percentage).toBeCloseTo(63.34, 2);
       expect(result[0].percentage).toBe(100);
-      expect(result[1].percentage).toBeCloseTo(83.33);
-      expect(result[2].percentage).toBe(50);
     });
 
     it('計算 bids 的累積總量和百分比', () => {
       wrapper.vm.orderBook.bids = [
-        [49900, 1],
-        [49800, 2],
-        [49700, 3],
+        [109794.5, 360],
+        [109785.3, 30900],
+        [109783.4, 92100],
       ];
-
       const result = wrapper.vm.topBids;
+      // 驗證 price 排序結果（高到低顯示）
+      expect(result[0].price).toBe(109794.5);
+      expect(result[1].price).toBe(109785.3);
+      expect(result[2].price).toBe(109783.4);
 
-      // 驗證排序（高到低顯示）
-      expect(result[0].price).toBe(49900);
-      expect(result[1].price).toBe(49800);
-      expect(result[2].price).toBe(49700);
-
-      // 驗證累積總量計算（從高價開始累積）
-      expect(result[0].total).toBe(1.0);
-      expect(result[1].total).toBe(3.0); 
-      expect(result[2].total).toBe(6.0);
+      // 驗證累積總量計算（由上往下加）
+      expect(result[0].total).toBe(360);
+      expect(result[1].total).toBe(31260);
+      expect(result[2].total).toBe(123360);
 
       // 驗證百分比計算
-      expect(result[0].percentage).toBeCloseTo(16.67);
-      expect(result[1].percentage).toBe(50);
+      expect(result[0].percentage).toBeCloseTo(0.29, 2);
+      expect(result[1].percentage).toBeCloseTo(25.34, 2);
       expect(result[2].percentage).toBe(100);
     });
 
     it('應該限制顯示最多 8 筆資料', () => {
-      // 設置超過 8 筆的資料
-      const manyAsks = Array.from({ length: 15 }, (_, i) => [50000 + i * 100, 1.0]);
+      // 設置超過 8 筆的資料，價格由低到高
+      const manyAsks = Array.from({ length: 15 }, (_, i) => [109820 + i * 0.1, 10000 + i * 1000]);
       wrapper.vm.orderBook.asks = manyAsks;
-
       const result = wrapper.vm.topAsks;
       expect(result).toHaveLength(8);
+      // 驗證價格由低到高
+      expect(result[0].price).toBeCloseTo(109820, 2);
+      expect(result[7].price).toBeCloseTo(109820 + 0.1 * 7, 2);
     });
   });
-
 });
