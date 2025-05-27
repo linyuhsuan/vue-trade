@@ -4,10 +4,10 @@ import { nextTick } from 'vue';
 import OrderBookList from '@/components/OrderBookList.vue';
 import { OrderBookHighlight } from '@/lib/enum/common';
 
-describe('OrderBookList.vue', () => {
+describe('OrderBookList', () => {
   const mockOrderBookData = [
     { price: 50000, size: 1.5, total: 1.5, percentage: 50 },
-    { price: 49900, size: 2.0, total: 3.5, percentage: 100 },
+    { price: 49900, size: 2, total: 3.5, percentage: 100 },
   ];
 
   const createWrapper = (props = {}) => {
@@ -70,7 +70,7 @@ describe('OrderBookList.vue', () => {
       const wrapper = createWrapper();
       const newData = [
         { price: 50000, size: 2.5, total: 2.5, percentage: 60 }, // 數量增加
-        { price: 49900, size: 1.5, total: 4.0, percentage: 100 }, // 數量減少
+        { price: 49900, size: 1.5, total: 4, percentage: 100 }, // 數量減少
       ];
       await wrapper.setProps({ orderBookData: newData });
       await nextTick();
@@ -107,9 +107,9 @@ describe('OrderBookList.vue', () => {
   describe('進度條視覺效果', () => {
     it('依照百分比產生不同寬度的進度條', () => {
       const testData = [
-        { price: 50000, size: 1.0, total: 1.0, percentage: 25 },
-        { price: 49900, size: 2.0, total: 3.0, percentage: 75 },
-        { price: 49800, size: 1.0, total: 4.0, percentage: 100 },
+        { price: 50000, size: 1, total: 1, percentage: 25 },
+        { price: 49900, size: 2, total: 3, percentage: 75 },
+        { price: 49800, size: 1, total: 4, percentage: 100 },
       ];
 
       const wrapper = createWrapper({ orderBookData: testData });

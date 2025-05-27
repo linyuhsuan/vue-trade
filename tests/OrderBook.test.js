@@ -15,7 +15,7 @@ vi.mock('@/lib/composables/useWebSocket', () => ({
   })),
 }));
 
-describe('OrderBook.vue', () => {
+describe('OrderBook', () => {
   let wrapper;
 
   beforeEach(() => {
@@ -32,10 +32,10 @@ describe('OrderBook.vue', () => {
     // 設定初始測試資料
     wrapper.vm.orderBook.asks = [
       [50100, 1.5],
-      [50200, 2.0],
+      [50200, 2],
     ];
     wrapper.vm.orderBook.bids = [
-      [49900, 1.0],
+      [49900, 1],
       [49800, 1.5],
     ];
     wrapper.vm.orderBook.lastSeqNum = 100;
@@ -140,9 +140,9 @@ describe('OrderBook.vue', () => {
   describe('計算邏輯與 UI 資料轉換', () => {
     it('計算 asks 的累積總量和百分比', () => {
       wrapper.vm.orderBook.asks = [
-        [50100, 1.0],
-        [50200, 2.0],
-        [50300, 3.0],
+        [50100, 1],
+        [50200, 2],
+        [50300, 3],
       ];
       const result = wrapper.vm.topAsks;
       // 驗證 price 排序結果（低到高顯示）
@@ -163,9 +163,9 @@ describe('OrderBook.vue', () => {
 
     it('計算 bids 的累積總量和百分比', () => {
       wrapper.vm.orderBook.bids = [
-        [49900, 1.0],
-        [49800, 2.0],
-        [49700, 3.0],
+        [49900, 1],
+        [49800, 2],
+        [49700, 3],
       ];
 
       const result = wrapper.vm.topBids;
