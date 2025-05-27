@@ -100,7 +100,7 @@ describe('OrderBook.vue', () => {
 
       wrapper.vm.processOrderBookData(deltaData);
 
-      // 驗證更新邏輯 - 使用更精確的檢查
+      
       const updatedAsk = wrapper.vm.orderBook.asks.find((item) => item[0] === 50100);
       expect(updatedAsk[1]).toBe(2); // 更新
 
@@ -117,8 +117,8 @@ describe('OrderBook.vue', () => {
     it('序號不連續時應該觸發重新訂閱', () => {
       const deltaData = {
         type: OrderBookType.DELTA,
-        seqNum: 105, // 跳號
-        prevSeqNum: 103, // 不匹配當前的 lastSeqNum (100)
+        seqNum: 105,
+        prevSeqNum: 103,
         asks: [],
         bids: [],
       };
