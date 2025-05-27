@@ -38,17 +38,17 @@
 vue-trade/
 ├── src/
 │   ├── components/
-│   │   ├── OrderBook.vue
 │   │   ├── OrderBookList.vue
 │   │   └── LastPrice.vue
 │   ├── lib/
 │   │   ├── utils/stringUtils.ts
 │   │   ├── enum/common.ts
 │   │   └── composables/useWebSocket.ts
+│   ├── App.vue
 ├── tests/
-│   ├── OrderBook.test.js
 │   ├── OrderBookList.test.js
 │   └── LastPrice.test.js
+│   └── App.test.js
 ├── public/
 │   └── assets/arrowDown.svg
 ├── package.json
@@ -87,18 +87,12 @@ npm run test
 
 ## 元件說明
 
-### OrderBook
-- **WebSocket 連線**：自動連接 OrderBook 與 LastPrice API，支援斷線自動重連與快照/增量資料處理。
-- **資料處理**：根據 API 規格，正確處理 snapshot/delta，並自動驗證 seqNum 連續性，異常時自動重新訂閱。
-- **asks/bids 依照 price 排序與累積**：asks 由低到高排序，bids 由高到低排序，並依規格計算累積總量與百分比。
-- **錯誤處理**：自動處理 WebSocket 斷線、資料異常、序號不連續重新訂閱。
-
 ### OrderBookList
 - **動態渲染**：根據 `isAsks` 決定渲染買/賣價，最多顯示 8 檔，並垂直置中顯示。
 - **動畫效果**：
     - 新價格出現：整行閃爍動畫（紅/綠背景）
     - 數量變動：size cell 閃爍動畫（綠色增、紅色減）
-- **進度條**：根據累積百分比顯示，賣單紅色、買單綠色。
+- **進度條**：根據累積百分比顯示，asks 紅色、bids 綠色。
 - **互動體驗**：整行 hover 有背景色，數字格式化（千分位、去除多餘 0）。
 - **高可測試性**：所有動畫、highlight、資料變化皆有單元測試覆蓋。
 

@@ -77,10 +77,6 @@ watch(
         highlights.value[idx] = null;
       }
     });
-    // 清理不存在的項目
-    // if (highlights.value.length > newVal.length) {
-    //   highlights.value = highlights.value.slice(0, newVal.length);
-    // }
   },
   { immediate: true },
 );
